@@ -48,35 +48,32 @@ npm run desktop
 
 将以独立桌面窗口运行（无浏览器、无地址栏），关闭窗口即退出。
 
-### 打包成 .exe / .dmg 发布
+### 打包成 .exe / .dmg / .AppImage 发布
 
-如需发布安装包，再装一个打包工具：
-
-```bash
-npm install --save-dev electron-builder
-```
-
-在 `package.json` 中追加：
-
-```json
-"build": {
-  "appId": "edu.sjtu.cnmooc.downloader",
-  "productName": "CNMOOC Downloader",
-  "files": ["src/**", "public/**", "electron/**", "package.json"],
-  "extraResources": [{ "from": "node_modules/playwright", "to": "playwright" }],
-  "win": { "target": "nsis" },
-  "mac": { "target": "dmg" },
-  "linux": { "target": "AppImage" }
-}
-```
-
-然后：
+构建配置已经放在 `electron-builder.yml`。本地直接：
 
 ```bash
-npx electron-builder
+npm install                       # 含 electron + electron-builder
+npm run build:desktop:win         # → release/CNMOOC Downloader-0.2.0-win-x64.exe
+npm run build:desktop:mac         # → release/CNMOOC Downloader-0.2.0-mac-{x64,arm64}.dmg（需 macOS）
+npm run build:desktop:linux       # → release/CNMOOC Downloader-0.2.0-linux-x86_64.AppImage
 ```
 
-> Playwright 的 chromium 浏览器需要额外处理（约 300 MB），最稳的方案是首次启动时让用户运行 `npx playwright install chromium`；嵌入到安装包会显著增大体积。
+构建脚本会先跑 `scripts/prepare-build.cjs` 把 Playwright 的 chromium 二进制下载到本地 `pw-cache/`，再由 electron-builder 作为 `extraResources` 打进安装包（约 +280 MB）。安装后用户**无需再执行 `npx playwright install chromium`**，开包即用。
+
+跨平台构建有两种方式：
+1. **GitHub Actions**（推荐）：推送 `v*.*.*` tag 后 `.github/workflows/build-desktop.yml` 会在 Ubuntu / Windows / macOS runner 上分别构建并把成品自动 attach 到对应 Release
+2. **本地**：自己在对应系统上跑上面的命令
+
+安装后运行时的数据存放位置（packaged 模式）：
+
+| 平台 | 位置 |
+|---|---|
+| Windows | `~/Documents/CNMOOC Downloader/` |
+| macOS | `~/Documents/CNMOOC Downloader/` |
+| Linux | `~/Documents/CNMOOC Downloader/` |
+
+里面包含 `storageState.json`、`.progress.json`、`.snapshot.json`、`config.json`（可选）和 `downloads/`。
 
 ---
 

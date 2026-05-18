@@ -1,10 +1,10 @@
 name: build-desktop
 
-# Builds Electron installers for Win/macOS/Linux on tag push and uploads them
-# to the matching GitHub Release. Also supports manual dispatch for testing.
-#
-# Note: Playwright's chromium binary is NOT bundled (~300 MB hit). End users
-# need to run `npx playwright install chromium` once after install. See README.
+# Builds Electron installers for Win/macOS/Linux on tag push. Each runner
+# downloads Playwright's chromium binary into pw-cache/, which electron-builder
+# then bundles as extraResources — so the installed app works out of the box
+# without the user having to run `npx playwright install chromium`.
+# Installers are auto-attached to the matching GitHub Release.
 
 on:
   push:
@@ -37,6 +37,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Download Playwright chromium into pw-cache
+        run: node scripts/prepare-build.cjs
 
       - name: Build with electron-builder
         env:

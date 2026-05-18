@@ -7,7 +7,6 @@ directories:
   buildResources: build
 
 # What goes into the asar archive. We only need our own source + minimal deps.
-# Heavy dev deps (playwright browsers, electron itself) are excluded.
 files:
   - src/**/*
   - public/**/*
@@ -21,26 +20,42 @@ files:
   - "!**/*.map"
   - "!node_modules/**/{LICENSE,license,LICENSE.md,license.md,LICENSE.txt,*.markdown,CHANGELOG*,*.d.ts}"
 
-# Playwright's CJS modules and browser binaries (when downloaded) must live
-# outside asar so they can be `require()`-ed at runtime by spawned helpers.
+# Playwright's CJS modules must live outside asar so the spawned chromium can
+# be located via require() at runtime.
 asarUnpack:
   - node_modules/playwright/**/*
   - node_modules/playwright-core/**/*
 
-# Per-target settings — minimal defaults, no code signing (not configured here).
+# Bundle the chromium binary itself (downloaded into pw-cache/ by
+# scripts/prepare-build.cjs). Without this, the installed app would have no
+# browser engine for headless probing and would fail on first use.
+extraResources:
+  - from: pw-cache
+    to: pw-cache
+    filter:
+      - "**/*"
+
 win:
   target: nsis
   artifactName: ${productName}-${version}-win-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CNMOOC Downloader
+
 mac:
   target:
     - target: dmg
       arch: [x64, arm64]
   artifactName: ${productName}-${version}-mac-${arch}.${ext}
   category: public.app-category.education
+
 linux:
   target: AppImage
   artifactName: ${productName}-${version}-linux-${arch}.${ext}
   category: Education
 
-# Disable auto-update for first release — no update server set up.
 publish: null
