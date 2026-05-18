@@ -1240,7 +1240,6 @@ function showPrepCard(total) {
   // Dynamic text goes via textContent so HTML in user-supplied values can't execute.
   $('#prepSub').textContent = `已处理 0 / ${safeTotal} · 预计 …`;
 }
-}
 
 function updatePrepCard(processed, total) {
   const fill = $('#prepFill');
