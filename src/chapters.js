@@ -7,6 +7,12 @@ const QUIZ_TYPES = new Set(['30', '50', '60']);
 
 
 export async function fetchChapters(apiContext, courseId) {
+  // Defend against path injection: courseId comes from a user-controllable
+  // route param. It is always a numeric session id when parsed from the
+  // course list, but we re-validate here before using it in a file name.
+  if (!/^\d+$/.test(String(courseId))) {
+    throw new Error(`invalid courseId: ${courseId}`);
+  }
   const url = `${BASE_URL}/portal/session/unitNavigation/${courseId}.mooc`;
   log.step(`Fetching chapters for course ${courseId}...`);
   const resp = await apiContext.get(url, { failOnStatusCode: false });

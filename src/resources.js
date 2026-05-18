@@ -1,4 +1,3 @@
-import * as cheerio from 'cheerio';
 import fs from 'node:fs';
 import { BASE_URL, log, resolveUrl, retry } from './utils.js';
 import { STORAGE_STATE_PATH } from './auth.js';

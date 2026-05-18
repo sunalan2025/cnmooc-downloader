@@ -808,7 +808,7 @@ function handleMessage(msg) {
       finishPrepCard(msg.total);
       break;
     case 'download-begin':
-      initDownloadCards(msg.total);
+      initDownloadCards();
       setControlState('downloading');
       break;
     case 'download-progress':
@@ -832,12 +832,16 @@ function handleMessage(msg) {
 }
 
 // ===== log =====
+// allowed log levels — drop anything else to avoid XSS via WS-sourced markup
+const LOG_LEVELS = new Set(['info', 'ok', 'warn', 'err', 'skip', 'step']);
+
 function addLog(level, message) {
+  const safeLevel = LOG_LEVELS.has(level) ? level : 'info';
   const panel = $('#logPanel');
   const div = document.createElement('div');
   div.className = 'log-line';
-  div.dataset.level = level;
-  div.innerHTML = `<span class="lvl lvl-${level}">[${level.toUpperCase()}]</span>${escHtml(message)}`;
+  div.dataset.level = safeLevel;
+  div.innerHTML = `<span class="lvl lvl-${safeLevel}">[${safeLevel.toUpperCase()}]</span>${escHtml(message)}`;
   panel.appendChild(div);
   panel.scrollTop = panel.scrollHeight;
   while (panel.children.length > 800) panel.firstChild.remove();

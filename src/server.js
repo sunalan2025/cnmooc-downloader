@@ -16,6 +16,10 @@ import { loadConfig, classifyResourceUrl } from './config.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '..', 'public');
 const PORT = 3456;
+// Bind to loopback only by default so other machines on the same LAN can't
+// hit the API (would let them browse our courses, trigger downloads, etc.).
+// Set CNMOOC_BIND=0.0.0.0 explicitly to expose externally.
+const HOST = process.env.CNMOOC_BIND || '127.0.0.1';
 
 // ---------------------------------------------------------------------------
 // WebSocket & log routing
@@ -424,7 +428,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => clients.delete(ws));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`\n  CNMOOC Downloader GUI 已启动`);
   console.log(`  打开浏览器访问: http://localhost:${PORT}\n`);
 
