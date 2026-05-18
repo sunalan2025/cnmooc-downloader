@@ -1,0 +1,55 @@
+# dependencies
+node_modules/
+
+# build / bundler caches
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# environment / secrets
+.env
+.env.local
+.env.*.local
+
+# project runtime state — contains login cookies & download progress
+storageState.json
+.progress.json
+.snapshot.json
+
+# user data
+downloads/
+
+# debug artifacts
+debug_*.html
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# python artifacts (in case of mixed tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OpenClaw local config
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Electron packaging output
+release/
+out/

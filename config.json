@@ -1,0 +1,8 @@
+{
+  "concurrency": 3,
+  "retryCount": 3,
+  "resourceTypes": ["video", "document"],
+  "excludeChapters": [],
+  "jitterMin": 300,
+  "jitterMax": 800
+}

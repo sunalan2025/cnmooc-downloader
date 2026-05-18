@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNMOOC Downloader</title>
+<style>
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-light: #eef2ff;
+  --primary-soft: #e0e7ff;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --error: #ef4444;
+  --error-light: #fee2e2;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --bg: #f8fafc;
+  --bg-soft: #f1f5f9;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-soft: #94a3b8;
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+  --shadow-sm: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --shadow-md: 0 4px 12px rgba(15,23,42,.06), 0 2px 4px rgba(15,23,42,.04);
+  --shadow-lg: 0 20px 40px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.06);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --transition: 150ms cubic-bezier(.4,0,.2,1);
+  --log-h: 220px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button { font-family: inherit; }
+
+/* ===== header ===== */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-xs);
+  position: relative;
+  z-index: 10;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 14px;
+  box-shadow: 0 2px 6px rgba(99,102,241,.3);
+}
+.header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.header-actions { display: flex; align-items: center; gap: 14px; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  transition: all var(--transition);
+}
+.status-pill.on { background: var(--success-light); color: #047857; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-soft); }
+.status-pill.on .status-dot { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+
+/* ===== layout ===== */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ===== sidebar ===== */
+.sidebar {
+  width: 360px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sidebar-title { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.04em; text-transform: uppercase; }
+.sidebar-body { flex: 1; overflow-y: auto; padding: 12px; }
+.sidebar-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sidebar-footer .count-strong { color: var(--primary); font-weight: 600; }
+
+.sidebar-empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.sidebar-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.7; }
+.sidebar-empty-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.sidebar-empty-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.6; }
+
+/* ===== course card ===== */
+.course-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: all var(--transition);
+}
+.course-card:hover { border-color: var(--border-strong); }
+.course-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.08);
+}
+.course-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  user-select: none;
+  font-size: 13.5px; font-weight: 500;
+  openclaw: pointer;
+  transition: background var(--transition);
+}
+.course-header:hover { background: rgba(99,102,241,.04); }
+.course-arrow {
+  font-size: 9px;
+  color: var(--text-soft);
+  transition: transform var(--transition);
+  width: 10px; flex-shrink: 0;
+}
+.course-card.open .course-arrow { transform: rotate(90deg); color: var(--primary); }
+.course-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.course-count {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.course-card.selected .course-count {
+  background: rgba(99,102,241,.15);
+  color: var(--primary-hover);
+}
+
+/* ===== chapter list ===== */
+.chapter-list {
+  display: none;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 4px 0;
+}
+.course-card.open .chapter-list { display: block; }
+.course-card.selected.open .chapter-list { background: rgba(255,255,255,.5); }
+.chapter-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px 8px 36px;
+  font-size: 13px;
+  openclaw: pointer;
+  transition: background var(--transition);
+  color: var(--text-muted);
+  position: relative;
+}
+.chapter-item::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 0; bottom: 50%;
+  width: 1px;
+  background: var(--border);
+}
+.chapter-item::after {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: var(--border);
+}
+.chapter-item:last-child::before { bottom: 50%; }
+.chapter-item:hover { background: rgba(99,102,241,.06); color: var(--text); }
+.chapter-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-count { font-size: 11px; color: var(--text-soft); flex-shrink: 0; }
+.chapter-loading { padding: 14px 36px; font-size: 12px; color: var(--text-soft); font-style: italic; }
+
+/* ===== custom checkbox (centered SVG + animations) ===== */
+.cb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0 0;
+  openclaw: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease, background-size 200ms cubic-bezier(.4,0,.2,1);
+}
+.cb:hover { border-color: var(--primary); }
+.cb:active { transform: scale(0.9); }
+.cb:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.25);
+}
+.cb:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round' d='M5 12.5L10 17.5L19 7'/%3E%3C/svg%3E");
+  background-size: 14px 14px;
+}
+.cb:indeterminate {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' d='M6 12h12'/%3E%3C/svg%3E");
+  background-size: 14px 14px;
+}
+.cb.pop { animation: cb-pop 240ms cubic-bezier(.5, 1.6, .55, 1); }
+@keyframes cb-pop {
+  0%   { transform: scale(0.85); }
+  55%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ===== content ===== */
+.content {
+  flex: 1;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ===== toolbar ===== */
+.toolbar {
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap;
+}
+.toolbar-group {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.toolbar-group label { font-weight: 500; font-size: 12px; color: var(--text-muted); }
+.toolbar-divider {
+  width: 1px; height: 20px;
+  background: var(--border);
+}
+.toolbar input[type="number"],
+.toolbar select {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+.toolbar input[type="number"]:focus,
+.toolbar select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+.toolbar input[type="number"] { width: 56px; }
+.toolbar .switch {
+  display: inline-flex; align-items: center; gap: 8px;
+  openclaw: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.toolbar .switch .cb { width: 16px; height: 16px; border-radius: 4px; }
+
+.toolbar-spacer { flex: 1; }
+.selection-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.selection-summary strong { color: var(--primary); font-weight: 600; }
+
+/* ===== download area ===== */
+.download-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--bg);
+}
+.download-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 80px 20px;
+}
+.download-empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.download-empty-title { font-size: 15px; color: var(--text); margin-bottom: 6px; font-weight: 500; }
+.download-empty-desc { font-size: 13px; }
+
+.download-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition);
+}
+.download-card:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); }
+.download-card .title {
+  font-size: 13.5px; font-weight: 500;
+  margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text);
+}
+.download-card .meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 12px;
+}
+.download-card .meta .meta-speed { color: var(--primary); font-weight: 500; }
+.download-card .meta .meta-eta { margin-left: auto; color: var(--text-muted); }
+.download-card .meta .badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+}
+.download-card .meta .badge.done { background: var(--success-light); color: #047857; }
+.download-card .meta .badge.error { background: var(--error-light); color: #b91c1c; }
+.download-card .meta .badge.skip { background: var(--warning-light); color: #b45309; }
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-soft);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, #8b5cf6 100%);
+  transition: width 300ms ease-out;
+  border-radius: 3px;
+}
+.progress-bar .fill.done { background: linear-gradient(90deg, var(--success) 0%, #34d399 100%); }
+.progress-bar .fill.error { background: linear-gradient(90deg, var(--error) 0%, #f87171 100%); }
+.progress-bar .fill.skip { background: var(--warning); }
+
+/* ===== prep card (URL probing phase) ===== */
+.prep-card {
+  max-width: 460px;
+  margin: 32px auto;
+  padding: 36px 28px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  transition: opacity 400ms ease;
+}
+.prep-orbit {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 22px;
+  position: relative;
+}
+.prep-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  opacity: 0;
+  animation: prep-ring 2.4s cubic-bezier(.215, .61, .355, 1) infinite;
+}
+.prep-orbit-ring.r2 { animation-delay: .8s; }
+.prep-orbit-ring.r3 { animation-delay: 1.6s; }
+.prep-orbit-core {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(99,102,241,.35);
+  animation: prep-core 1.8s ease-in-out infinite;
+}
+@keyframes prep-ring {
+  0%   { transform: scale(.4); opacity: .7; border-width: 3px; }
+  100% { transform: scale(1.4); opacity: 0; border-width: 1px; }
+}
+@keyframes prep-core {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.prep-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.prep-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.prep-bar {
+  height: 6px;
+  background: var(--bg-soft);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.prep-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, #8b5cf6 50%, var(--primary) 100%);
+  background-size: 200% 100%;
+  animation: prep-shimmer 2s linear infinite;
+  transition: width 320ms cubic-bezier(.4, 0, .2, 1);
+  border-radius: 3px;
+}
+@keyframes prep-shimmer {
+  0%   { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+.prep-hint {
+  font-size: 12px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+/* ===== log panel ===== */
+.log-section {
+  flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+}
+.log-header {
+  height: 38px;
+  flex-shrink: 0;
+  padding: 0 18px;
+  display: flex; align-items: center; gap: 10px;
+  background: #1e293b;
+  color: #cbd5e1;
+  border-bottom: 1px solid #334155;
+  font-size: 12px;
+}
+.log-section.collapsed .log-header { border-bottom: none; }
+.log-header-title {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e2e8f0;
+}
+.log-header-spacer { flex: 1; }
+.log-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 3px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  openclaw: pointer;
+  transition: all var(--transition);
+}
+.log-btn:hover { background: #334155; color: #f1f5f9; border-color: #475569; }
+.log-btn-primary { color: #c7d2fe; border-color: #4338ca; }
+.log-btn-primary:hover { background: #4338ca; color: #fff; border-color: #4f46e5; }
+
+.log-content {
+  max-height: var(--log-h);
+  overflow: hidden;
+  transition: max-height 320ms cubic-bezier(.4, 0, .2, 1);
+}
+.log-section.collapsed .log-content {
+  max-height: 0;
+}
+
+.log-panel {
+  height: var(--log-h);
+  overflow-y: auto;
+  padding: 12px 18px;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+.log-line {
+  padding: 1px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-line .lvl {
+  display: inline-block;
+  min-width: 56px;
+  margin-right: 8px;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.log-line .lvl-info { color: #60a5fa; }
+.log-line .lvl-ok { color: #34d399; }
+.log-line .lvl-warn { color: #fbbf24; }
+.log-line .lvl-err { color: #f87171; }
+.log-line .lvl-skip { color: #64748b; }
+.log-line .lvl-step { color: #a78bfa; }
+
+/* ===== buttons ===== */
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  font-family: inherit;
+  openclaw: pointer;
+  transition: all var(--transition);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:focus { outline: none; }
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(99,102,241,.3);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(99,102,241,.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled {
+  background: var(--border-strong);
+  color: var(--text-soft);
+  openclaw: not-allowed;
+  box-shadow: none;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-lg { padding: 10px 22px; font-size: 14px; }
+.btn-danger {
+  color: var(--error);
+  border-color: rgba(239,68,68,.3);
+}
+.btn-danger:hover {
+  background: var(--error-light);
+  color: #b91c1c;
+  border-color: var(--error);
+}
+.download-controls { display: flex; align-items: center; gap: 8px; }
+
+/* ===== overlay ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.6);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  transition: opacity var(--transition);
+}
+.overlay.hidden { display: none; }
+.overlay-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  text-align: center;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  animation: pop 200ms cubic-bezier(.4,0,.2,1);
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.overlay-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+.overlay-box p { color: var(--text-muted); font-size: 13.5px; margin-bottom: 20px; line-height: 1.7; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 12px auto 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== scrollbar ===== */
+.sidebar-body::-webkit-scrollbar,
+.download-area::-webkit-scrollbar,
+.log-panel::-webkit-scrollbar { width: 8px; }
+.sidebar-body::-webkit-scrollbar-thumb,
+.download-area::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.sidebar-body::-webkit-scrollbar-thumb:hover,
+.download-area::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+.log-panel::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- header -->
+<div class="header">
+  <div class="header-brand">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 4v11"/>
+        <path d="M7 10l5 5 5-5"/>
+        <path d="M5 20h14"/>
+      </svg>
+    </div>
+    <h1>CNMOOC Downloader</h1>
+  </div>
+  <div class="header-actions">
+    <span class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusText">检测中...</span>
+    </span>
+    <button class="btn btn-ghost btn-sm" id="loginBtn" style="display:none">登录</button>
+  </div>
+</div>
+
+<!-- main -->
+<div class="main">
+  <!-- sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">我的课程</span>
+      <button class="btn btn-ghost btn-sm" id="refreshBtn" style="display:none">刷新</button>
+    </div>
+    <div class="sidebar-body" id="courseList">
+      <div class="sidebar-empty">
+        <div class="sidebar-empty-icon">📚</div>
+        <div class="sidebar-empty-title">尚未登录</div>
+        <div class="sidebar-empty-desc">登录后将显示「正在学习」的课程</div>
+      </div>
+    </div>
+    <div class="sidebar-footer" id="sidebarFooter" style="display:none">
+      <span>已选 <span class="count-strong" id="selectedCountText">0</span> 项</span>
+      <span id="totalCountText"></span>
+    </div>
+  </div>
+
+  <!-- content -->
+  <div class="content">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label>并发</label>
+        <input type="number" id="concurrency" value="3" min="1" max="8">
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <label>重试</label>
+        <input type="number" id="retryCount" value="3" min="0" max="10">
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <label>类型</label>
+        <select id="resourceType">
+          <option value="all">全部</option>
+          <option value="video">仅视频</option>
+          <option value="document">仅课件</option>
+        </select>
+      </div>
+      <label class="switch">
+        <input type="checkbox" class="cb" id="incremental"> 增量
+      </label>
+      <span class="toolbar-spacer"></span>
+      <span class="selection-summary" id="selectionSummary"></span>
+      <div class="download-controls" id="downloadControls">
+        <button class="btn btn-primary btn-lg" id="downloadBtn" disabled>开始下载</button>
+        <button class="btn btn-ghost btn-sm dl-ctrl" id="pauseBtn" style="display:none">⏸ 暂停</button>
+        <button class="btn btn-primary btn-sm dl-ctrl" id="resumeBtn" style="display:none">▶ 继续</button>
+        <button class="btn btn-ghost btn-sm dl-ctrl btn-danger" id="cancelBtn" style="display:none">✕ 取消</button>
+      </div>
+    </div>
+    <div class="download-area" id="downloadArea">
+      <div class="download-empty" id="downloadEmpty">
+        <div class="download-empty-icon">⬇</div>
+        <div class="download-empty-title">尚未开始下载</div>
+        <div class="download-empty-desc">在左侧勾选要下载的课程或章节，然后点击「开始下载」</div>
+      </div>
+    </div>
+    <div class="log-section" id="logSection">
+      <div class="log-header">
+        <span class="log-header-title">日志</span>
+        <span class="log-header-spacer"></span>
+        <button class="log-btn" id="logClear" title="清空日志">清空</button>
+        <button class="log-btn log-btn-primary" id="logToggle">隐藏 INFO</button>
+      </div>
+      <div class="log-content">
+        <div class="log-panel" id="logPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- overlay -->
+<div class="overlay hidden" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overlayTitle">正在登录</h2>
+    <p id="overlayMsg">请在弹出的浏览器中完成 Jaccount 登录</p>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+// ===== state =====
+let courses = [];
+const courseSelection = new Map(); // courseId -> 'all' | 'none' | Set<chapter>
+const expandedCourses = new Set();
+let loginRequested = false;
+let statusChecked = false;
+let logCollapsed = localStorage.getItem('logCollapsed') === '1';
+
+// ===== WebSocket =====
+const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+const ws = new WebSocket(`${proto}://${location.host}/ws`);
+ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
+ws.onclose = () => addLog('warn', 'WebSocket 已断开，刷新页面恢复');
+ws.onerror = () => {};
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'log':
+      addLog(msg.level, msg.message);
+      break;
+    case 'login-ok':
+      loginRequested = false;
+      hideOverlay();
+      updateStatus(true);
+      loadCourses();
+      break;
+    case 'login-error':
+      loginRequested = false;
+      hideOverlay();
+      addLog('err', '登录失败: ' + msg.error);
+      break;
+    case 'prep-begin':
+      showPrepCard(msg.total);
+      break;
+    case 'prep-progress':
+      updatePrepCard(msg.processed, msg.total);
+      break;
+    case 'prep-end':
+      finishPrepCard(msg.total);
+      break;
+    case 'download-begin':
+      initDownloadCards(msg.total);
+      setControlState('downloading');
+      break;
+    case 'download-progress':
+      updateDownloadCard(msg);
+      break;
+    case 'download-paused':
+      setControlState('paused');
+      break;
+    case 'download-resumed':
+      setControlState('downloading');
+      break;
+    case 'download-cancelled':
+      setControlState('idle');
+      addLog('warn', `已取消 (完成 ${msg.completed}, 失败 ${msg.errors}, 取消 ${msg.cancelled || 0})`);
+      break;
+    case 'download-end':
+      setControlState('idle');
+      addLog('ok', `全部下载结束 (成功: ${msg.completed}, 失败: ${msg.errors})`);
+      break;
+  }
+}
+
+// ===== log =====
+function addLog(level, message) {
+  const panel = $('#logPanel');
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.dataset.level = level;
+  div.innerHTML = `<span class="lvl lvl-${level}">[${level.toUpperCase()}]</span>${escHtml(message)}`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+  while (panel.children.length > 800) panel.firstChild.remove();
+}
+
+$('#logClear').onclick = () => { $('#logPanel').innerHTML = ''; };
+
+function setLogCollapsed(collapsed) {
+  logCollapsed = collapsed;
+  $('#logSection').classList.toggle('collapsed', collapsed);
+  $('#logToggle').textContent = collapsed ? '显示 INFO' : '隐藏 INFO';
+  localStorage.setItem('logCollapsed', collapsed ? '1' : '0');
+}
+$('#logToggle').onclick = () => setLogCollapsed(!logCollapsed);
+setLogCollapsed(logCollapsed);
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== status =====
+async function checkStatus() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    updateStatus(data.loggedIn);
+    if (data.loggedIn) {
+      courses = data.courses || [];
+      renderCourses();
+    } else if (!statusChecked) {
+      addLog('step', '未检测到有效登录会话，自动启动登录流程...');
+      startLogin();
+    }
+    if (data.downloadRunning) $('#downloadBtn').disabled = true;
+  } catch {
+    updateStatus(false);
+  } finally {
+    statusChecked = true;
+  }
+}
+
+function updateStatus(loggedIn) {
+  const pill = $('#statusPill');
+  const text = $('#statusText');
+  const loginBtn = $('#loginBtn');
+  const refreshBtn = $('#refreshBtn');
+  if (loggedIn) {
+    pill.classList.add('on');
+    text.textContent = '已登录';
+    loginBtn.style.display = 'none';
+    refreshBtn.style.display = '';
+    updateDownloadBtn();
+  } else {
+    pill.classList.remove('on');
+    text.textContent = '未登录';
+    loginBtn.style.display = '';
+    refreshBtn.style.display = 'none';
+    $('#downloadBtn').disabled = true;
+    $('#sidebarFooter').style.display = 'none';
+    $('#courseList').innerHTML = `
+      <div class="sidebar-empty">
+        <div class="sidebar-empty-icon">🔐</div>
+        <div class="sidebar-empty-title">请登录 CNMOOC 账号</div>
+        <div class="sidebar-empty-desc">点击按钮，将弹出 Chromium 完成 Jaccount 扫码登录</div>
+        <button class="btn btn-primary" onclick="document.getElementById('loginBtn').click()">登录 Jaccount</button>
+      </div>`;
+  }
+}
+
+// ===== login =====
+async function startLogin() {
+  if (loginRequested) return;
+  loginRequested = true;
+  showOverlay('正在登录', '请在弹出的 Chromium 中完成 Jaccount 扫码登录');
+  try {
+    const res = await fetch('/api/login', { method: 'POST' });
+    if (res.status === 409) addLog('warn', '后端已在登录中，忽略重复请求');
+  } catch (err) {
+    hideOverlay();
+    addLog('err', '登录请求失败: ' + err.message);
+    loginRequested = false;
+  }
+}
+$('#loginBtn').onclick = () => startLogin();
+
+// ===== courses =====
+function showCoursesLoading() {
+  $('#sidebarFooter').style.display = 'none';
+  $('#courseList').innerHTML = `
+    <div class="sidebar-empty">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      <div class="sidebar-empty-title">正在加载课程...</div>
+      <div class="sidebar-empty-desc">首次加载需要几秒钟</div>
+    </div>`;
+}
+
+async function loadCourses() {
+  showCoursesLoading();
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    if (data.courses) {
+      courses = data.courses;
+      renderCourses();
+      updateDownloadBtn();
+    }
+  } catch (err) {
+    addLog('err', '加载课程失败: ' + err.message);
+  }
+}
+
+$('#refreshBtn').onclick = () => {
+  courses = [];
+  courseSelection.clear();
+  expandedCourses.clear();
+  loadCourses();
+};
+
+// ===== selection state helpers =====
+function getCourseState(courseId) { return courseSelection.get(courseId) ?? 'none'; }
+function isCourseChecked(courseId) { return getCourseState(courseId) !== 'none'; }
+function isCourseIndeterminate(courseId) { return getCourseState(courseId) instanceof Set; }
+function isChapterSelected(courseId, chapter) {
+  const s = getCourseState(courseId);
+  if (s === 'all') return true;
+  if (s === 'none') return false;
+  return s.has(chapter);
+}
+
+function toggleCourse(courseId) {
+  const s = getCourseState(courseId);
+  if (s === 'none') {
+    courseSelection.set(courseId, 'all');
+    ensureChaptersLoaded(courseId);
+  } else {
+    courseSelection.set(courseId, 'none');
+  }
+  syncSelectionDOM();
+  updateDownloadBtn();
+}
+
+function toggleChapter(courseId, chapter) {
+  const course = courses.find(c => c.courseId === courseId);
+  if (!course?.chapters) return;
+  const allCh = course.chapters.map(ch => ch.chapter);
+  let s = getCourseState(courseId);
+
+  let set;
+  if (s === 'all') {
+    set = new Set(allCh);
+    set.delete(chapter);
+  } else if (s === 'none') {
+    set = new Set([chapter]);
+  } else {
+    set = new Set(s);
+    if (set.has(chapter)) set.delete(chapter);
+    else set.add(chapter);
+  }
+
+  if (set.size === 0) courseSelection.set(courseId, 'none');
+  else if (set.size === allCh.length) courseSelection.set(courseId, 'all');
+  else courseSelection.set(courseId, set);
+
+  syncSelectionDOM();
+  updateDownloadBtn();
+}
+
+// targeted DOM sync — no innerHTML rebuild, so other checkboxes don't re-animate
+function syncSelectionDOM() {
+  for (const card of $$('.course-card[data-cid]')) {
+    const cid = card.dataset.cid;
+    card.classList.toggle('selected', isCourseChecked(cid));
+    const cb = card.querySelector('.cb[data-action="course"]');
+    if (cb) {
+      const chk = isCourseChecked(cid);
+      const ind = isCourseIndeterminate(cid);
+      if (cb.checked !== chk) cb.checked = chk;
+      if (cb.indeterminate !== ind) cb.indeterminate = ind;
+    }
+    for (const chCb of card.querySelectorAll('.cb[data-action="chapter-cb"]')) {
+      const isSel = isChapterSelected(cid, chCb.dataset.ch);
+      if (chCb.checked !== isSel) chCb.checked = isSel;
+    }
+  }
+}
+
+function popAnimate(el) {
+  if (!el) return;
+  el.classList.remove('pop');
+  void el.offsetWidth; // force restart
+  el.classList.add('pop');
+}
+
+function updateDownloadBtn() {
+  let selectedCourses = 0;
+  let selectedChapterCount = 0;
+  let totalChapters = 0;
+  for (const c of courses) {
+    const s = getCourseState(c.courseId);
+    if (s === 'none') continue;
+    selectedCourses++;
+    if (c.chapters) {
+      totalChapters += c.chapters.length;
+      if (s === 'all') selectedChapterCount += c.chapters.length;
+      else if (s instanceof Set) selectedChapterCount += s.size;
+    }
+  }
+  $('#downloadBtn').disabled = selectedCourses === 0;
+
+  // selection summary text near download button
+  $('#selectionSummary').innerHTML = selectedCourses
+    ? `已选 <strong>${selectedCourses}</strong> 门课程${selectedChapterCount ? ` · <strong>${selectedChapterCount}</strong> 章节` : ''}`
+    : '';
+
+  // sidebar footer
+  const footer = $('#sidebarFooter');
+  if (courses.length) {
+    footer.style.display = '';
+    $('#selectedCountText').textContent = selectedCourses;
+    $('#totalCountText').textContent = `共 ${courses.length} 门`;
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+// ===== chapter lazy load =====
+async function ensureChaptersLoaded(courseId) {
+  const course = courses.find(c => c.courseId === courseId);
+  if (!course || course.chapters) return;
+  try {
+    const res = await fetch(`/api/courses/${courseId}/chapters`);
+    course.chapters = await res.json();
+    // only update the affected card's chapter list — don't rebuild whole sidebar
+    updateChapterListDOM(courseId);
+    syncSelectionDOM();
+    updateDownloadBtn();
+  } catch (err) {
+    addLog('err', `加载章节失败: ${err.message}`);
+  }
+}
+
+function updateChapterListDOM(courseId) {
+  const card = $('#courseList').querySelector(`.course-card[data-cid="${CSS.escape(courseId)}"]`);
+  if (!card) return;
+  const course = courses.find(c => c.courseId === courseId);
+  const list = card.querySelector('.chapter-list');
+  if (!course?.chapters?.length) {
+    list.innerHTML = '<div class="chapter-loading">加载章节中...</div>';
+    return;
+  }
+  const cid = escAttr(courseId);
+  list.innerHTML = course.chapters.map(ch => `
+    <div class="chapter-item" data-action="chapter" data-cid="${cid}" data-ch="${escAttr(ch.chapter)}">
+      <input type="checkbox" class="cb" data-action="chapter-cb" data-cid="${cid}" data-ch="${escAttr(ch.chapter)}">
+      <span class="chapter-name">${escHtml(ch.chapter)}</span>
+      <span class="chapter-count">${ch.items?.length || 0}</span>
+    </div>`).join('');
+  // update total count badge
+  const total = course.chapters.reduce((s, ch) => s + (ch.items?.length || 0), 0);
+  const header = card.querySelector('.course-header');
+  let countEl = header.querySelector('.course-count');
+  if (total) {
+    if (!countEl) {
+      countEl = document.createElement('span');
+      countEl.className = 'course-count';
+      header.appendChild(countEl);
+    }
+    countEl.textContent = total;
+  } else if (countEl) {
+    countEl.remove();
+  }
+}
+
+function toggleExpand(courseId) {
+  const card = $('#courseList').querySelector(`.course-card[data-cid="${CSS.escape(courseId)}"]`);
+  if (!card) return;
+  if (expandedCourses.has(courseId)) {
+    expandedCourses.delete(courseId);
+    card.classList.remove('open');
+  } else {
+    expandedCourses.add(courseId);
+    card.classList.add('open');
+    ensureChaptersLoaded(courseId);
+  }
+}
+
+// ===== render =====
+function renderCourses() {
+  const container = $('#courseList');
+  if (!courses.length) {
+    container.innerHTML = `
+      <div class="sidebar-empty">
+        <div class="sidebar-empty-icon">📭</div>
+        <div class="sidebar-empty-title">暂无课程</div>
+        <div class="sidebar-empty-desc">点击右上角「刷新」重试</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = courses.map(c => {
+    const selected = isCourseChecked(c.courseId);
+    const expanded = expandedCourses.has(c.courseId);
+    const chapters = c.chapters || [];
+    const total = chapters.reduce((s, ch) => s + (ch.items?.length || 0), 0);
+    const cid = escAttr(c.courseId);
+
+    return `
+      <div class="course-card ${expanded ? 'open' : ''} ${selected ? 'selected' : ''}" data-cid="${cid}">
+        <div class="course-header" data-action="expand" data-cid="${cid}">
+          <input type="checkbox" class="cb" data-action="course" data-cid="${cid}">
+          <span class="course-arrow">▶</span>
+          <span class="course-name">${escHtml(c.name)}</span>
+          ${total ? `<span class="course-count">${total}</span>` : ''}
+        </div>
+        <div class="chapter-list">
+          ${chapters.length === 0 && expanded
+            ? '<div class="chapter-loading">加载章节中...</div>'
+            : chapters.map(ch => `
+              <div class="chapter-item" data-action="chapter" data-cid="${cid}" data-ch="${escAttr(ch.chapter)}">
+                <input type="checkbox" class="cb" data-action="chapter-cb" data-cid="${cid}" data-ch="${escAttr(ch.chapter)}">
+                <span class="chapter-name">${escHtml(ch.chapter)}</span>
+                <span class="chapter-count">${ch.items?.length || 0}</span>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  // sync indeterminate / checked states after innerHTML rebuild
+  for (const cb of $$('.cb[data-action="course"]')) {
+    const cid = cb.dataset.cid;
+    cb.checked = isCourseChecked(cid);
+    cb.indeterminate = isCourseIndeterminate(cid);
+  }
+  for (const cb of $$('.cb[data-action="chapter-cb"]')) {
+    cb.checked = isChapterSelected(cb.dataset.cid, cb.dataset.ch);
+  }
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// event delegation
+$('#courseList').addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.dataset.action === 'course') {
+    e.stopPropagation();
+    popAnimate(t);
+    toggleCourse(t.dataset.cid);
+    return;
+  }
+  if (t.dataset.action === 'chapter-cb') {
+    e.stopPropagation();
+    popAnimate(t);
+    toggleChapter(t.dataset.cid, t.dataset.ch);
+    return;
+  }
+  const chapterRow = t.closest('[data-action="chapter"]');
+  if (chapterRow) {
+    popAnimate(chapterRow.querySelector('.cb'));
+    toggleChapter(chapterRow.dataset.cid, chapterRow.dataset.ch);
+    return;
+  }
+  const courseRow = t.closest('[data-action="expand"]');
+  if (courseRow) {
+    toggleExpand(courseRow.dataset.cid);
+  }
+});
+
+$('#incremental').addEventListener('click', (e) => popAnimate(e.currentTarget));
+
+// ===== prep (URL probing) phase =====
+let prepStart = 0;
+function showPrepCard(total) {
+  prepStart = Date.now();
+  const area = $('#downloadArea');
+  area.innerHTML = `
+    <div class="prep-card" id="prepCard">
+      <div class="prep-orbit">
+        <div class="prep-orbit-ring"></div>
+        <div class="prep-orbit-ring r2"></div>
+        <div class="prep-orbit-ring r3"></div>
+        <div class="prep-orbit-core">⏳</div>
+      </div>
+      <div class="prep-title">正在准备下载</div>
+      <div class="prep-sub" id="prepSub">已处理 0 / ${total} · 预计 …</div>
+      <div class="prep-bar"><div class="prep-bar-fill" id="prepFill" style="width:0%"></div></div>
+      <div class="prep-hint">正在为每个课件解析下载地址，避免触发限流。下载阶段会更快。</div>
+    </div>`;
+}
+
+function updatePrepCard(processed, total) {
+  const fill = $('#prepFill');
+  const sub = $('#prepSub');
+  if (!fill || !sub) return;
+  const pct = total ? Math.round(processed / total * 100) : 0;
+  fill.style.width = pct + '%';
+  const elapsed = (Date.now() - prepStart) / 1000;
+  const remaining = total - processed;
+  const avgPer = processed > 0 ? elapsed / processed : 0;
+  const etaSec = remaining * avgPer;
+  const etaStr = avgPer > 0 ? `预计 ${formatTime(etaSec)}` : '预计 …';
+  sub.textContent = `已处理 ${processed} / ${total} · ${pct}% · ${etaStr}`;
+}
+
+function finishPrepCard(total) {
+  const sub = $('#prepSub');
+  if (sub) sub.textContent = `准备完成，开始下载 ${total} 个文件...`;
+  setTimeout(() => {
+    const card = $('#prepCard');
+    if (card) card.style.opacity = '0';
+  }, 400);
+}
+
+// ===== download =====
+$('#downloadBtn').onclick = async () => {
+  const rt = $('#resourceType').value;
+  const resourceTypes = rt === 'all' ? ['video', 'document'] : [rt];
+  const concurrency = parseInt($('#concurrency').value, 10) || 3;
+  const retryCount = parseInt($('#retryCount').value, 10) || 3;
+  const incremental = $('#incremental').checked;
+
+  const courseIds = [];
+  const chapterFilter = {};
+  for (const [cid, state] of courseSelection) {
+    if (state === 'none') continue;
+    courseIds.push(cid);
+    if (state instanceof Set) chapterFilter[cid] = [...state];
+  }
+  if (!courseIds.length) return;
+
+  $('#downloadBtn').disabled = true;
+  $('#downloadArea').innerHTML = '<div class="download-empty"><div class="download-empty-icon">⏳</div><div class="download-empty-title">准备中...</div></div>';
+
+  try {
+    await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        courseIds,
+        selectedChapters: chapterFilter,
+        resourceTypes,
+        concurrency,
+        retryCount,
+        incremental,
+      }),
+    });
+  } catch (err) {
+    addLog('err', '下载请求失败: ' + err.message);
+    $('#downloadBtn').disabled = false;
+  }
+};
+
+// idle | downloading | paused
+function setControlState(state) {
+  const dlBtn = $('#downloadBtn');
+  const pauseBtn = $('#pauseBtn');
+  const resumeBtn = $('#resumeBtn');
+  const cancelBtn = $('#cancelBtn');
+  if (state === 'idle') {
+    dlBtn.style.display = '';
+    dlBtn.disabled = [...courseSelection.values()].every(s => s === 'none');
+    pauseBtn.style.display = 'none';
+    resumeBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+  } else if (state === 'downloading') {
+    dlBtn.style.display = 'none';
+    pauseBtn.style.display = '';
+    resumeBtn.style.display = 'none';
+    cancelBtn.style.display = '';
+  } else if (state === 'paused') {
+    dlBtn.style.display = 'none';
+    pauseBtn.style.display = 'none';
+    resumeBtn.style.display = '';
+    cancelBtn.style.display = '';
+  }
+}
+
+$('#pauseBtn').onclick = async () => {
+  try { await fetch('/api/pause', { method: 'POST' }); }
+  catch (err) { addLog('err', '暂停失败: ' + err.message); }
+};
+$('#resumeBtn').onclick = async () => {
+  try { await fetch('/api/resume', { method: 'POST' }); }
+  catch (err) { addLog('err', '继续失败: ' + err.message); }
+};
+$('#cancelBtn').onclick = async () => {
+  if (!confirm('确定取消下载吗？已下载的部分会保留在磁盘上，下次可断点续传。')) return;
+  try { await fetch('/api/cancel', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' }); }
+  catch (err) { addLog('err', '取消失败: ' + err.message); }
+};
+
+// ===== download progress cards =====
+const progressCards = new Map(); // id -> { card, lastDownloaded, lastTime, speed }
+
+function initDownloadCards() {
+  $('#downloadArea').innerHTML = '';
+  progressCards.clear();
+}
+
+function updateDownloadCard(msg) {
+  const { itemId, title, filename, event } = msg;
+  const id = itemId || filename;
+  const area = $('#downloadArea');
+  const empty = $('#downloadEmpty');
+  if (empty) empty.remove();
+
+  if (event === 'start') {
+    const card = document.createElement('div');
+    card.className = 'download-card';
+    card.id = 'card-' + id;
+    const sizeStr = msg.total ? formatSize(msg.total) : '?';
+    card.innerHTML = `
+      <div class="title">${escHtml(title || filename)}</div>
+      <div class="meta">
+        <span class="meta-progress">0 B / ${sizeStr}</span>
+        <span class="meta-speed">—</span>
+        <span class="meta-eta">—</span>
+      </div>
+      <div class="progress-bar"><div class="fill" style="width:0%"></div></div>`;
+    area.insertBefore(card, area.firstChild);
+    progressCards.set(id, { card, lastDownloaded: 0, lastTime: Date.now(), speed: 0 });
+  } else if (event === 'progress') {
+    const state = progressCards.get(id);
+    if (!state) return;
+    const now = Date.now();
+    const dt = (now - state.lastTime) / 1000;
+    if (dt > 0.05) {
+      const inst = (msg.downloaded - state.lastDownloaded) / dt; // B/s
+      state.speed = state.speed > 0 ? state.speed * 0.7 + inst * 0.3 : inst;
+      state.lastDownloaded = msg.downloaded;
+      state.lastTime = now;
+    }
+
+    const pct = msg.total ? Math.round(msg.downloaded / msg.total * 100) : 0;
+    const remaining = Math.max(0, (msg.total || 0) - msg.downloaded);
+    const etaSec = state.speed > 0.5 ? remaining / state.speed : 0;
+
+    const fill = state.card.querySelector('.fill');
+    fill.style.width = pct + '%';
+    state.card.querySelector('.meta-progress').textContent =
+      `${formatSize(msg.downloaded)} / ${formatSize(msg.total)} · ${pct}%`;
+    state.card.querySelector('.meta-speed').textContent = formatSpeed(state.speed);
+    state.card.querySelector('.meta-eta').textContent = etaSec > 0 ? `剩余 ${formatTime(etaSec)}` : '—';
+  } else if (event === 'done') {
+    const state = progressCards.get(id);
+    if (state) {
+      const fill = state.card.querySelector('.fill');
+      fill.classList.add('done');
+      fill.style.width = '100%';
+      state.card.querySelector('.meta').innerHTML =
+        `<span class="badge done">已完成</span><span>${formatSize(msg.size)}</span>`;
+    }
+  } else if (event === 'paused') {
+    const state = progressCards.get(id);
+    if (state) {
+      const fill = state.card.querySelector('.fill');
+      fill.classList.add('skip');
+      state.card.querySelector('.meta').innerHTML =
+        `<span class="badge skip">已暂停</span><span>${formatSize(msg.downloaded)} / ${formatSize(msg.total)}</span>`;
+    }
+  } else if (event === 'error') {
+    const state = progressCards.get(id);
+    if (state) {
+      const fill = state.card.querySelector('.fill');
+      fill.classList.add('error');
+      fill.style.width = '100%';
+      state.card.querySelector('.meta').innerHTML =
+        `<span class="badge error">失败</span><span>${escHtml(msg.error || '')}</span>`;
+    }
+  } else if (event === 'skip') {
+    const card = document.createElement('div');
+    card.className = 'download-card';
+    card.innerHTML = `
+      <div class="title">${escHtml(filename)}</div>
+      <div class="meta"><span class="badge skip">已跳过</span><span>${escHtml(msg.reason || '')}</span></div>
+      <div class="progress-bar"><div class="fill skip" style="width:100%"></div></div>`;
+    area.insertBefore(card, area.firstChild);
+    progressCards.set(id, { card });
+  }
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
+}
+
+function formatSpeed(bps) {
+  if (!bps || bps < 1) return '—';
+  return formatSize(bps) + '/s';
+}
+
+function formatTime(sec) {
+  if (!sec || !isFinite(sec)) return '—';
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+// ===== overlay =====
+function showOverlay(title, msg) {
+  $('#overlayTitle').textContent = title;
+  $('#overlayMsg').textContent = msg;
+  $('#overlay').classList.remove('hidden');
+}
+function hideOverlay() { $('#overlay').classList.add('hidden'); }
+
+// ===== init =====
+checkStatus();
+</script>
+</body>
+</html>
