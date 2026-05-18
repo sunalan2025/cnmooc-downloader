@@ -1,0 +1,46 @@
+appId: edu.sjtu.cnmooc.downloader
+productName: CNMOOC Downloader
+copyright: Copyright © 2026 sunalan2025
+
+directories:
+  output: release
+  buildResources: build
+
+# What goes into the asar archive. We only need our own source + minimal deps.
+# Heavy dev deps (playwright browsers, electron itself) are excluded.
+files:
+  - src/**/*
+  - public/**/*
+  - electron/**/*
+  - package.json
+  - "!**/.git"
+  - "!**/.github"
+  - "!**/*.md"
+  - "!**/test/**"
+  - "!**/tests/**"
+  - "!**/*.map"
+  - "!node_modules/**/{LICENSE,license,LICENSE.md,license.md,LICENSE.txt,*.markdown,CHANGELOG*,*.d.ts}"
+
+# Playwright's CJS modules and browser binaries (when downloaded) must live
+# outside asar so they can be `require()`-ed at runtime by spawned helpers.
+asarUnpack:
+  - node_modules/playwright/**/*
+  - node_modules/playwright-core/**/*
+
+# Per-target settings — minimal defaults, no code signing (not configured here).
+win:
+  target: nsis
+  artifactName: ${productName}-${version}-win-${arch}.${ext}
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+  category: public.app-category.education
+linux:
+  target: AppImage
+  artifactName: ${productName}-${version}-linux-${arch}.${ext}
+  category: Education
+
+# Disable auto-update for first release — no update server set up.
+publish: null

@@ -1,0 +1,75 @@
+name: Bug report
+description: 报告一个 bug
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢报告 bug。请尽量补全下列信息，便于复现。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 简要说明遇到了什么
+      placeholder: 例如：下载到一半进度条不动了
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 一步一步告诉我们如何重现
+      placeholder: |
+        1. 启动 `npm run gui`
+        2. 勾选课程 X
+        3. 点击「开始下载」
+        4. 5 分钟后界面卡住
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      placeholder: 应该正常下载完毕
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 使用模式
+      options:
+        - CLI (npm start / npm run login / npm run list)
+        - Web GUI (npm run gui)
+        - Desktop (npm run desktop / Electron 安装包)
+        - 其他 / 不确定
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: Windows 11 / macOS 14.5 / Ubuntu 22.04
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js 版本（如适用）
+      placeholder: 输出 `node --version`
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 截图
+      description: 把控制台或 GUI 日志面板的相关输出贴在这里；如有截图可以一并附上
+      render: shell
+    validations:
+      required: false

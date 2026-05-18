@@ -9,7 +9,12 @@
     "login": "node src/index.js --login-only",
     "list": "node src/index.js --list-only",
     "gui": "node src/server.js",
-    "desktop": "electron electron/main.cjs"
+    "desktop": "electron electron/main.cjs",
+    "lint": "node -e \"const fs=require('fs');for(const f of fs.readdirSync('src')){if(f.endsWith('.js'))require('child_process').execSync('node --check src/'+f,{stdio:'inherit'});}require('child_process').execSync('node --check electron/main.cjs',{stdio:'inherit'});const m=fs.readFileSync('public/index.html','utf8').match(/<script>([\\s\\S]*?)<\\/script>/);fs.writeFileSync('.inline.mjs',m[1]);require('child_process').execSync('node --check .inline.mjs',{stdio:'inherit'});fs.unlinkSync('.inline.mjs');console.log('lint ok')\"",
+    "build:desktop": "electron-builder",
+    "build:desktop:win": "electron-builder --win",
+    "build:desktop:mac": "electron-builder --mac",
+    "build:desktop:linux": "electron-builder --linux"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
@@ -18,10 +23,8 @@
     "playwright": "^1.48.0",
     "ws": "^8.20.1"
   },
-  "optionalDependencies": {
-    "electron": "^33.0.0"
-  },
   "devDependencies": {
-    "electron": "^42.1.0"
+    "electron": "^42.1.0",
+    "electron-builder": "^25.1.8"
   }
 }

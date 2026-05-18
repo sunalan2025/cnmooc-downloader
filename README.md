@@ -1,5 +1,8 @@
 # CNMOOC Downloader
 
+[![lint](https://github.com/sunalan2025/cnmooc-downloader/actions/workflows/lint.yml/badge.svg)](https://github.com/sunalan2025/cnmooc-downloader/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/sunalan2025/cnmooc-downloader/actions/workflows/codeql.yml/badge.svg)](https://github.com/sunalan2025/cnmooc-downloader/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/sunalan2025/cnmooc-downloader?display_name=tag)](https://github.com/sunalan2025/cnmooc-downloader/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > 本项目基于 **MIT 许可证** 开源，详见 [LICENSE](LICENSE)。

@@ -1,0 +1,48 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-check:
+    name: node --check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check all JS / CJS files
+        run: |
+          set -e
+          for f in src/*.js electron/*.cjs; do
+            node --check "$f"
+            echo "OK $f"
+          done
+
+      - name: Extract and check inline script in public/index.html
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('public/index.html', 'utf8');
+            const m = html.match(/<script>([\s\S]*?)<\/script>/);
+            if (!m) { console.error('no <script> block found'); process.exit(1); }
+            fs.writeFileSync('.inline-script.mjs', m[1]);
+          "
+          node --check .inline-script.mjs
+          echo "OK inline script"
+
+      - name: Validate JSON files
+        run: |
+          for f in package.json config.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "OK $f"
+          done
