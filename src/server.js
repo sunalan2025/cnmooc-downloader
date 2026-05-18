@@ -3,6 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { WebSocketServer } from 'ws';
 import { chromium } from 'playwright';
 import { ensureAuthenticated, isSessionValid, STORAGE_STATE_PATH, hasStoredSession } from './auth.js';
@@ -81,6 +82,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
 
+// Rate-limiters for state-mutating endpoints. Even though we default to
+// binding 127.0.0.1, defense-in-depth in case the user overrides
+// CNMOOC_BIND to expose the server externally.
+const loginLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false });
+const downloadCtrlLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
+
 // --- GET /api/status ---
 app.get('/api/status', async (_req, res) => {
   try {
@@ -107,7 +114,7 @@ app.get('/api/status', async (_req, res) => {
 
 // --- POST /api/login ---
 let loginInProgress = false;
-app.post('/api/login', async (_req, res) => {
+app.post('/api/login', loginLimiter, async (_req, res) => {
   if (loginInProgress) {
     res.status(409).json({ error: 'Login already in progress' });
     broadcast({ type: 'log', level: 'warn', message: '登录请求已在进行中，忽略重复触发' });
@@ -141,7 +148,7 @@ app.get('/api/courses/:id/chapters', async (req, res) => {
 });
 
 // --- POST /api/download ---
-app.post('/api/download', async (req, res) => {
+app.post('/api/download', downloadCtrlLimiter, async (req, res) => {
   if (downloadState.running) {
     res.status(409).json({ error: 'Download already in progress' });
     return;
@@ -164,7 +171,7 @@ app.post('/api/download', async (req, res) => {
 });
 
 // --- POST /api/pause ---
-app.post('/api/pause', (_req, res) => {
+app.post('/api/pause', downloadCtrlLimiter, (_req, res) => {
   if (!session || session.paused) {
     res.status(409).json({ error: 'No active session to pause' });
     return;
@@ -177,7 +184,7 @@ app.post('/api/pause', (_req, res) => {
 });
 
 // --- POST /api/resume ---
-app.post('/api/resume', async (_req, res) => {
+app.post('/api/resume', downloadCtrlLimiter, async (_req, res) => {
   if (!session || !session.paused) {
     res.status(409).json({ error: 'No paused session to resume' });
     return;
@@ -194,7 +201,7 @@ app.post('/api/resume', async (_req, res) => {
 });
 
 // --- POST /api/cancel ---
-app.post('/api/cancel', (req, res) => {
+app.post('/api/cancel', downloadCtrlLimiter, (req, res) => {
   if (!session) {
     res.status(409).json({ error: 'No active session to cancel' });
     return;

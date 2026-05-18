@@ -7,17 +7,18 @@ const QUIZ_TYPES = new Set(['30', '50', '60']);
 
 
 export async function fetchChapters(apiContext, courseId) {
-  // Defend against path injection: courseId comes from a user-controllable
-  // route param. It is always a numeric session id when parsed from the
-  // course list, but we re-validate here before using it in a file name.
-  if (!/^\d+$/.test(String(courseId))) {
+  // courseId comes from a user-controllable route param. Convert to an
+  // integer first — this both validates and produces a value that CodeQL
+  // recognises as path-injection-safe.
+  const courseIdNum = Number(courseId);
+  if (!Number.isInteger(courseIdNum) || courseIdNum <= 0) {
     throw new Error(`invalid courseId: ${courseId}`);
   }
-  const url = `${BASE_URL}/portal/session/unitNavigation/${courseId}.mooc`;
-  log.step(`Fetching chapters for course ${courseId}...`);
+  const url = `${BASE_URL}/portal/session/unitNavigation/${courseIdNum}.mooc`;
+  log.step(`Fetching chapters for course ${courseIdNum}...`);
   const resp = await apiContext.get(url, { failOnStatusCode: false });
   if (resp.status() !== 200) {
-    throw new Error(`Chapter request failed for ${courseId}: HTTP ${resp.status()}`);
+    throw new Error(`Chapter request failed for ${courseIdNum}: HTTP ${resp.status()}`);
   }
   const html = await resp.text();
   const $ = cheerio.load(html);
@@ -72,9 +73,9 @@ export async function fetchChapters(apiContext, courseId) {
   const filtered = chapters.filter((c) => c.items.length > 0);
   const totalItems = filtered.reduce((s, c) => s + c.items.length, 0);
   if (!totalItems) {
-    const debugPath = `debug_chapters_${courseId}.html`;
+    const debugPath = `debug_chapters_${courseIdNum}.html`;
     fs.writeFileSync(debugPath, html, 'utf8');
-    log.warn(`No items found for course ${courseId}. HTML saved to ${debugPath}.`);
+    log.warn(`No items found for course ${courseIdNum}. HTML saved to ${debugPath}.`);
   } else {
     log.ok(`${filtered.length} chapter(s), ${totalItems} item(s)`);
   }
