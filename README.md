@@ -9,7 +9,20 @@
 
 批量下载上海交大好大学在线（cnmooc.sjtu.cn）课程视频和讲义。支持 CLI、Web GUI 和桌面应用三种使用方式。
 
-## 安装
+## 直接下载安装包（推荐）
+
+去 [Releases](https://github.com/sunalan2025/cnmooc-downloader/releases/latest) 拿对应平台的安装包，**开包即用**，不需要装 Node / Playwright / 任何东西：
+
+| 平台 | 文件 |
+|---|---|
+| Windows 10/11 (x64) | `CNMOOC.Downloader-*-win-x64.exe` |
+| macOS Apple Silicon | `CNMOOC.Downloader-*-mac-arm64.dmg` |
+| macOS Intel | `CNMOOC.Downloader-*-mac-x64.dmg` |
+| Linux x86_64 | `CNMOOC.Downloader-*-linux-x86_64.AppImage`（用前 `chmod +x`） |
+
+如果你想从源码运行 / 自己改代码 / 自己打包，继续往下读。
+
+## 从源码运行（开发者）
 
 ```bash
 npm install
@@ -54,9 +67,9 @@ npm run desktop
 
 ```bash
 npm install                       # 含 electron + electron-builder
-npm run build:desktop:win         # → release/CNMOOC Downloader-0.2.0-win-x64.exe
-npm run build:desktop:mac         # → release/CNMOOC Downloader-0.2.0-mac-{x64,arm64}.dmg（需 macOS）
-npm run build:desktop:linux       # → release/CNMOOC Downloader-0.2.0-linux-x86_64.AppImage
+npm run build:desktop:win         # → release/CNMOOC Downloader-*-win-x64.exe
+npm run build:desktop:mac         # → release/CNMOOC Downloader-*-mac-{x64,arm64}.dmg（需 macOS）
+npm run build:desktop:linux       # → release/CNMOOC Downloader-*-linux-x86_64.AppImage
 ```
 
 构建脚本会先跑 `scripts/prepare-build.cjs` 把 Playwright 的 chromium 二进制下载到本地 `pw-cache/`，再由 electron-builder 作为 `extraResources` 打进安装包（约 +280 MB）。安装后用户**无需再执行 `npx playwright install chromium`**，开包即用。
@@ -67,13 +80,39 @@ npm run build:desktop:linux       # → release/CNMOOC Downloader-0.2.0-linux-x8
 
 安装后运行时的数据存放位置（packaged 模式）：
 
-| 平台 | 位置 |
-|---|---|
-| Windows | `~/Documents/CNMOOC Downloader/` |
-| macOS | `~/Documents/CNMOOC Downloader/` |
-| Linux | `~/Documents/CNMOOC Downloader/` |
+| 平台 | 你的数据（课程、cookie、下载） | Electron 自管的内部数据（窗口状态、登录会话） |
+|---|---|---|
+| Windows | `%USERPROFILE%\Documents\CNMOOC Downloader\` | `%APPDATA%\CNMOOC Downloader\` |
+| macOS | `~/Documents/CNMOOC Downloader/` | `~/Library/Application Support/CNMOOC Downloader/` |
+| Linux | `~/Documents/CNMOOC Downloader/` | `~/.config/CNMOOC Downloader/` |
 
-里面包含 `storageState.json`、`.progress.json`、`.snapshot.json`、`config.json`（可选）和 `downloads/`。
+第一列包含 `storageState.json`、`.progress.json`、`.snapshot.json`、`config.json`（可选）和 `downloads/`；第二列是 Electron 自动管理的运行时缓存。
+
+### 卸载
+
+| 平台 | 操作 |
+|---|---|
+| **Windows** | 「设置 → 应用 → 已安装的应用」搜 `CNMOOC Downloader` → 点「卸载」<br>或 Win+R 输入 `appwiz.cpl` → 列表里找到后右键卸载<br>或运行 `%LOCALAPPDATA%\Programs\CNMOOC Downloader\Uninstall CNMOOC Downloader.exe` |
+| **macOS** | 把 `Applications/CNMOOC Downloader.app` 拖到废纸篓 |
+| **Linux** | AppImage 是单文件，直接 `rm CNMOOC.Downloader-0.2.1-linux-x86_64.AppImage` |
+
+卸载程序**只会移除应用本体**，上面表里两列残留数据都不会动。如果想彻底清除：
+
+```bash
+# Windows (PowerShell)
+Remove-Item -Recurse -Force "$env:USERPROFILE\Documents\CNMOOC Downloader"
+Remove-Item -Recurse -Force "$env:APPDATA\CNMOOC Downloader"
+
+# macOS
+rm -rf ~/Documents/CNMOOC\ Downloader
+rm -rf ~/Library/Application\ Support/CNMOOC\ Downloader
+
+# Linux
+rm -rf ~/Documents/CNMOOC\ Downloader
+rm -rf ~/.config/CNMOOC\ Downloader
+```
+
+> 想保留下载的视频/课件但清掉登录信息？只删 `storageState.json` 即可。
 
 ---
 
