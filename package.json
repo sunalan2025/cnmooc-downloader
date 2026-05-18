@@ -1,6 +1,6 @@
 {
   "name": "cnmooc-downloader",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Batch downloader for SJTU CNMOOC (好大学在线) course resources",
   "type": "module",
   "main": "src/index.js",
